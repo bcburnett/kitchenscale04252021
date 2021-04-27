@@ -1,20 +1,26 @@
 /*
-* Garden sensor sketch
 * File: State.cpp
-* Author: Brian C. Burnett
-* GitHub repo: https://github.com/bcburnett/garden
-* Directory: https://github.com/bcburnett/garden/tree/master/garden
-* Questions: https://github.com/bcburnett/garden/discussions/1
-* 
-* 
-* This application is in the Public Domain.
-* All information is provided in good faith, however I make no representation 
-* or warranty of any kind, express or implied, regarding the accuracy, adequacy, 
-* validity, reliability, availability or completeness of this application.
+  Kitchen Scale sketch
+  Author: Brian C. Burnett
+  GitHub repo: https://github.com/bcburnett/kitchenscale04252021
+  Questions: https://github.com/bcburnett/kitchenscale04252021/discussions
+
+  This application is in the Public Domain.
+  All information is provided in good faith, however I make no representation
+  or warranty of any kind, express or implied, regarding the accuracy, adequacy,
+  validity, reliability, availability or completeness of this application.
  */
 
 #include"State.h"
 
+float State::weight(){
+  return jsonMap["weight"].toFloat();
+  };
+  
+float State::weight(float value){
+  jsonMap["weight"] = String(value,2);
+  return jsonMap["weight"].toFloat();
+  };
 
 float State::humidity(){
   return jsonMap["humidity"].toFloat();

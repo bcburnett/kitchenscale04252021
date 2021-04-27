@@ -23,40 +23,31 @@
         p {
           font-size: 1.9rem;
         }
-        
-        .green {
-        background-color: green;
-        }
-        
-        .yellow {
-        background-color: yellow;
-        }
-        
-        .red {
-        background-color: red;
-        }
 
         body {
           margin:auto;
           padding-bottom: 30px;
           text-align: center;
+          background-color: green;
         }
 
       </style>
-      <title>Garden Sensor</title>
 </head>
 
 <body>
 
   <div style="width: 75%; margin:auto; text-align:center;"></div>
-  <h2>Garden Sensor<br /> <span id="time"></span></h2>
+  <h2>ESP32 Kitchen Scale<br /><span id="time"></span></h2>
 
 
-    
+   
+
     <hr>
-    <p>Soil Moisture: <span id="moisture"></span></p>
-    <p>Relay State: <span id="relay"></span></p>
-    <button id="relay_toggle">Relay</button>
+    <p>Temperature: <span id="temperature"></span></p>
+    <p>Barometric Pressure: <span id="pressure"></span></p>
+    <p>Humidity: <span id="humidity"></span></p>
+    <p>Dew Point: <span id="dewpoint"></span></p>
+    <p>weight: <span id="weight"></span></p>
 
     <input type='file' name='upload' id='upload' value=''><span id="percent"></span>
   </div>
@@ -91,32 +82,20 @@
     }
 
     function onMessage(event) {
-    console.log(event);
       json = JSON.parse(event.data);
       console.log(json);
-      let element = document.getElementById("moisture")
-      element.innerHTML = json.moisture;
-      element.classList.remove('red');
-      element.classList.remove('green');
-      element.classList.remove('yellow');
-      if(json.moisture >= 3400) element.classList.add('red');
-      if(json.moisture < 3400 && json.moisture > 3100) element.classList.add('yellow');
-      if(json.moisture < 3100) element.classList.add('green');
-      element = document.getElementById("relay");
-      element.innerHTML = json.relay;
-      
-      
+      document.getElementById("temperature").innerHTML = toFixed(json.temperature, 2);
+      document.getElementById("pressure").innerHTML = toFixed(json.pressure, 2);
+      document.getElementById("humidity").innerHTML = toFixed(json.humidity, 2);
+      document.getElementById("dewpoint").innerHTML = toFixed(json.dew, 2);
+      document.getElementById("weight").innerHTML = toFixed(json.weight, 2);
+      if (json.reload=="true") location.reload();
     }
 
     // on page load
     function onLoad(event) {
       initWebSocket();
       document.getElementById("upload").addEventListener("change", (e) => processFile(e));
-      document.getElementById("relay_toggle").addEventListener("click", (e) => toggleRelay(e));
-    }
-    
-    function toggleRelay(e){
-    websocket.send('relay');
     }
 
     function processFile(e) {
@@ -179,8 +158,17 @@
       }
       setInterval(doTime, 1000);
 
+      setInterval(() => {
+        window.myWidgetParam ? window.myWidgetParam : window.myWidgetParam = [];
+        window.myWidgetParam.push({id: 11, cityid: '4839420', appid: '2e47deaedc70f784b3aabcab50a2e950', units: 'imperial', containerid: 'openweathermap-widget-11', });
+        var script = document.createElement('script');
+        script.async = true;
+        script.charset = "utf-8";
+        script.src = "http://openweathermap.org/themes/openweathermap/assets/vendor/owm/js/weather-widget-generator.js";
+        eval(script);
+      },30000);
+
   </script>
 </body>
 
 </html>
-

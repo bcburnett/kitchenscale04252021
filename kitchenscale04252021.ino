@@ -1,10 +1,9 @@
 /*
-  Garden sensor sketch
-  File: gardenpumpcontrol04242021.ino
+  File: kitchenscale04252021.ino
+  Kitchen Scale sketch
   Author: Brian C. Burnett
-  GitHub repo: https://github.com/bcburnett/garden
-  Directory: https://github.com/bcburnett/garden/tree/master/garden
-  Questions: https://github.com/bcburnett/garden/discussions/1
+  GitHub repo: https://github.com/bcburnett/kitchenscale04252021
+  Questions: https://github.com/bcburnett/kitchenscale04252021/discussions
 
   This application is in the Public Domain.
   All information is provided in good faith, however I make no representation
@@ -22,12 +21,15 @@
 #include <WiFiUdp.h> // needed by OTA
 #include "bcbaws.h" // Asynchronous web server wrapper for espasyncwebserver and websockets
 #include"bcbBmx.h" // Weather sensor class
+#include"scale.h" // scale loadsensor class
+#include <Wire.h>
 
 #define ARDUINO_RUNNING_CORE 1 // core to bind our task to
 
 State state; // instantiate state class
 BcbAws aws;  // instantiate web server class
 BcbBmx bmx; //  instantiate weather sensor class
+Scale scale; // instantiate scale class
 
 // internal rtc variables
 const char *ntpServer = "pool.ntp.org";
@@ -70,12 +72,15 @@ void setup() {
   // set initial program state
   initWiFi(); // connect to wifi
   initTime(); // connect to ntp servers and set rtc
-  aws.BcbAwsInit(&state); // initialize the webserver and start listening for connections
   digitalWrite(2, LOW); // write the relay pin low before declaring it as an output
   pinMode(2, OUTPUT); // declare it an output
   state.relay(false); // and set the state to reflect the relay condition
+  Wire.begin();
   bmx.bmxInit(& state); // initialize the bmx sensor
-  
+  scale.scaleSetup(&state);
+  aws.BcbAwsInit(&state); // initialize the webserver and start listening for connections
+
+
   ArduinoOTA // OTA setup
   .onStart([]() {
     String type;
@@ -91,9 +96,18 @@ void setup() {
   });
   ArduinoOTA.begin();
 
-  xTaskCreatePinnedToCore(               // update the connected web clients every minute
+  xTaskCreatePinnedToCore(               // update the connected web clients 
     UpdateClients,                       // function name
     "updateClients",                     // name for humans
+    2048,                                // This stack size can be checked & adjusted by reading the Stack Highwater
+    NULL,                                // task input parameter
+    2,                                   // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+    NULL,                                // task handle
+    ARDUINO_RUNNING_CORE);
+
+  xTaskCreatePinnedToCore(               // read sensors
+    doSensorMeasurement,                       // function name
+    "doSensorMeasurement",                     // name for humans
     2048,                                // This stack size can be checked & adjusted by reading the Stack Highwater
     NULL,                                // task input parameter
     2,                                   // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
@@ -110,15 +124,32 @@ void loop() {
   }
   vTaskDelay(60);
 }
+SemaphoreHandle_t state_lock = xSemaphoreCreateMutex();
 
 void UpdateClients(void *pvParameters) { // handle websocket  display
   (void)pvParameters;
   for (;;) {
     if (!state.getOta()) {
-      if ( bmx.doSensorMeasurement())
+      if (xSemaphoreTake(state_lock, 250)) {
         aws.notifyClients(); // send state to the client as a json string
+        xSemaphoreGive(state_lock);
+      }
     }
-    vTaskDelay(60000); // update clients every minute
+    vTaskDelay(500); // update clients every minute
+  }
+}
+
+void doSensorMeasurement(void *pvParameters) { // handle websocket  display
+  (void)pvParameters;
+  for (;;) {
+    if (!state.getOta()) {
+      if (xSemaphoreTake(state_lock, 250)) {
+        bmx.doSensorMeasurement();
+        scale.getWeight();
+        xSemaphoreGive(state_lock);
+      }
+    }
+    vTaskDelay(500); // update clients every minute
   }
 }
 

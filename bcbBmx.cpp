@@ -1,24 +1,20 @@
 /*
-* Garden sensor sketch
 * File: bcbBmx.cpp
 * Author: Brian C. Burnett
-* GitHub repo: https://github.com/bcburnett/garden
-* Directory: https://github.com/bcburnett/garden/tree/master/garden
-* Questions: https://github.com/bcburnett/garden/discussions/1
+* bmx sensor class
 * 
-*    
 * This application is in the Public Domain.
 * All information is provided in good faith, however I make no representation 
 * or warranty of any kind, express or implied, regarding the accuracy, adequacy, 
 * validity, reliability, availability or completeness of this application.
- */
+*/
 #include "bcbBmx.h"
-
+#define ARDUINO_RUNNING_CORE 1 // core to bind our task to
 BcbBmx::BcbBmx(){};
 
 void BcbBmx::bmxInit(BcbBmxState * istate){
   state = istate;
-  Wire.begin();
+
 bmx280.begin();
 
   if (bmx280.isBME280())
@@ -38,10 +34,14 @@ bmx280.begin();
   //if sensor is a BME280, set an oversampling setting for humidity measurements.
   if (bmx280.isBME280())
     bmx280.writeOversamplingHumidity(BMx280MI::OSRS_H_x16);
+    
+
   };
 
-  bool BcbBmx::doSensorMeasurement() {
+  void BcbBmx::doSensorMeasurement() {
+
   //start a measurement
+
   bmx280.measure();
 
   do
@@ -55,5 +55,6 @@ bmx280.begin();
 
   if (bmx280.isBME280())
     state->humidity(bmx280.getHumidity());
-return true;
+
+
 }
