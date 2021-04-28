@@ -21,10 +21,12 @@
 
 class State : public BcbAwsState , public BcbBmxState, public ScaleState {
   public:
-
+  
+// begin ScaleState functions
     float weight();
     float weight(float value);
-    
+// end ScaleState functions
+
 // begin BcbBmxState functions
     // setter and getter for humidity
     float humidity();
