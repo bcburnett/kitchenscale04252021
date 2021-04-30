@@ -6,6 +6,7 @@ class Scale {
 
     void scaleSetup (ScaleState * istate);
     float getWeight();
+    void tare();
 
 
     uint8_t dataPin = 15;
@@ -23,11 +24,11 @@ void Scale::scaleSetup (ScaleState * istate) {
   scale.set_scale();
   scale.tare();  //Reset the scale to 0
 
-  //Get a baseline reading
-  //  long zero_factor = 16926;
-
-
 };
+
+void Scale::tare(){
+  scale.tare();
+}
 
 
 // Common weight retrieval routine

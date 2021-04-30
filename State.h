@@ -52,15 +52,16 @@ class State : public BcbAwsState , public BcbBmxState, public ScaleState {
     String filename();
     String filename(String value);
 
-    
+
+     // setter and getter for websocket command
+    String command();
+    String command(String value);
+
+       
     // should the browser reload the website
     bool reload();
     bool reload(bool value);
 
-
-    // relay state
-    bool relay();
-    bool relay(bool value);
 
     // return a stringifyed json representation of the state
     String getJSON();

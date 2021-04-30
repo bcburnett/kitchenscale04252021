@@ -68,6 +68,15 @@ String State::filename(String value) {  // filename setter
   return jsonMap["filename"];
 };
 
+String State::command() {  // command getter
+  return jsonMap["command"];
+};
+
+String State::command(String value) {  // command setter
+  jsonMap["command"] = value;
+  return jsonMap["command"];
+};
+
 
 bool State::setOta (bool value) {  // ota setter
   ota = value;
@@ -88,15 +97,6 @@ bool State::reload(bool value) {  // reload setter
   return (jsonMap["reload"] == "true");
 };
 
-
-bool State::relay() {  // relay getter
-  return (jsonMap["relay"] == "true");
-};
-
-bool State::relay(bool value) {  // relay setter
-  jsonMap["relay"] = value ? "true" : "false";
-  return (jsonMap["relay"] == "true");
-};
 
 void State::dew(){
   

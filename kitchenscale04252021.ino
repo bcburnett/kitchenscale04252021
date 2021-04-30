@@ -35,10 +35,14 @@ Scale scale; // instantiate scale class
 const char *ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = -18000;
 const int daylightOffset_sec = 3600;
+
 bool wifiavail = false;
 
+SemaphoreHandle_t state_lock = xSemaphoreCreateMutex();
+
+
 // define functions
-void UpdateClients(void *pvParameters);
+void doSensorMeasurement(void *pvParameters);
 void initWiFi();
 void initTime();
 void setup();
@@ -57,6 +61,7 @@ String printLocalTime() {
   return (asctime(&timeinfo));
 }
 
+
 String printLocalHour() {
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo)) {
@@ -65,16 +70,14 @@ String printLocalHour() {
   return (String(asctime(&timeinfo)).substring(11, 16) + " ");
 }
 
+
 void setup() {
   Serial.begin(115200);
-  delay(500);
+  vTaskDelay(500);
 
   // set initial program state
   initWiFi(); // connect to wifi
   initTime(); // connect to ntp servers and set rtc
-  digitalWrite(2, LOW); // write the relay pin low before declaring it as an output
-  pinMode(2, OUTPUT); // declare it an output
-  state.relay(false); // and set the state to reflect the relay condition
   Wire.begin();
   bmx.bmxInit(& state); // initialize the bmx sensor
   scale.scaleSetup(&state);
@@ -96,18 +99,18 @@ void setup() {
   });
   ArduinoOTA.begin();
 
-  xTaskCreatePinnedToCore(               // update the connected web clients 
-    UpdateClients,                       // function name
-    "updateClients",                     // name for humans
-    2048,                                // This stack size can be checked & adjusted by reading the Stack Highwater
-    NULL,                                // task input parameter
-    2,                                   // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
-    NULL,                                // task handle
-    ARDUINO_RUNNING_CORE);
+//  xTaskCreatePinnedToCore(               // update the connected web clients 
+//    UpdateClients,                       // function name
+//    "updateClients",                     // name for humans
+//    2048,                                // This stack size can be checked & adjusted by reading the Stack Highwater
+//    NULL,                                // task input parameter
+//    2,                                   // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
+//    NULL,                                // task handle
+//    ARDUINO_RUNNING_CORE);
 
   xTaskCreatePinnedToCore(               // read sensors
-    doSensorMeasurement,                       // function name
-    "doSensorMeasurement",                     // name for humans
+    doSensorMeasurement,                 // function name
+    "doSensorMeasurement",               // name for humans
     2048,                                // This stack size can be checked & adjusted by reading the Stack Highwater
     NULL,                                // task input parameter
     2,                                   // Priority, with 3 (configMAX_PRIORITIES - 1) being the highest, and 0 being the lowest.
@@ -124,18 +127,18 @@ void loop() {
   }
   vTaskDelay(60);
 }
-SemaphoreHandle_t state_lock = xSemaphoreCreateMutex();
+
 
 void UpdateClients(void *pvParameters) { // handle websocket  display
   (void)pvParameters;
   for (;;) {
     if (!state.getOta()) {
-      if (xSemaphoreTake(state_lock, 250)) {
+      if (xSemaphoreTake(state_lock, 125)) {
         aws.notifyClients(); // send state to the client as a json string
         xSemaphoreGive(state_lock);
       }
     }
-    vTaskDelay(500); // update clients every minute
+    vTaskDelay(250); // update clients every minute
   }
 }
 
@@ -143,13 +146,15 @@ void doSensorMeasurement(void *pvParameters) { // handle websocket  display
   (void)pvParameters;
   for (;;) {
     if (!state.getOta()) {
-      if (xSemaphoreTake(state_lock, 250)) {
         bmx.doSensorMeasurement();
+        if(state.command() == "tare"){
+          state.command("");
+          scale.tare();
+        }
         scale.getWeight();
-        xSemaphoreGive(state_lock);
-      }
+        aws.notifyClients();
     }
-    vTaskDelay(500); // update clients every minute
+    vTaskDelay(1000); // update clients every minute
   }
 }
 

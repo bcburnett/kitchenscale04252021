@@ -79,10 +79,6 @@ void BcbAws::handleWebSocketMessage(void *arg, uint8_t *data, size_t len) { // r
 
 void BcbAws::parseCommand(String command) {    // parse the command from the client
 
-  if (command == "relay") {
-    digitalWrite(2, state->relay(!state->relay())); // turn on or off and set state
-    notifyClients();
-  }
   // file upload handler
 
   if (command.substring(0, 4) == "upld") {   // get the name of the file
@@ -90,13 +86,13 @@ void BcbAws::parseCommand(String command) {    // parse the command from the cli
     SPIFFS.remove("/temp.txt");
   }
 
-  if (command.substring(0, 4) == "comp") {   // finalize the upload, rename temp.txt to the filename
+  else if (command.substring(0, 4) == "comp") {   // finalize the upload, rename temp.txt to the filename
     SPIFFS.remove(("/" + state->filename()).c_str());
     SPIFFS.rename("/temp.txt", ("/" + state->filename()).c_str());
     state->filename("");
   }
 
-  if (command.substring(0, 4) == "file") {   //append received data to temp.txt
+  else if (command.substring(0, 4) == "file") {   //append received data to temp.txt
     String message = command.substring(5);
     File file = SPIFFS.open("/temp.txt", FILE_APPEND);
     file.print(message.c_str());
@@ -104,10 +100,14 @@ void BcbAws::parseCommand(String command) {    // parse the command from the cli
 
   }
 
-  if (command == "reload") {    //send a reload message to the clients
+  else if (command == "reload") {    //send a reload message to the clients
     state->reload(true);
     notifyClients();
     state->reload(false);
+  }
+
+  else{
+       state->command(command);
   }
 }
 
