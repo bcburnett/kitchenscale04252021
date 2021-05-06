@@ -20,13 +20,11 @@
 {
 
     class Scale {
-        
+
   public:
 
     // functions
     void scaleSetup (ScaleState * istate);
-        
-
     float getWeight();
     void tare();
 
