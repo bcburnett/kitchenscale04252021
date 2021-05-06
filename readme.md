@@ -18,8 +18,11 @@
 
 ### scale.h
 {
+
     class Scale {
+        
   public:
+
     // functions
     void scaleSetup (ScaleState * istate);
         
