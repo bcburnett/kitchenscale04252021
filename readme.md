@@ -17,11 +17,11 @@
     the program timing
 
 ### scale.h
-{
+
 
     class Scale {
 
-  public:
+    public:
 
     // functions
     void scaleSetup (ScaleState * istate);
@@ -36,5 +36,5 @@
     float oldWeight;
     ScaleState * state;
 }
-}
+
 
